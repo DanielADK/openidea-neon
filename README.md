@@ -219,4 +219,6 @@ PHPStan configurations.
 
 ## Licence
 
-Apache-2.0, see [LICENSE](LICENSE).
+Apache-2.0, see [LICENSE](LICENSE). The NEON file icon comes from
+[intellij-neon](https://github.com/noctud/intellij-neon) under the MIT License, see
+[NOTICE.md](NOTICE.md).
