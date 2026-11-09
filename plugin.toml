@@ -1,0 +1,33 @@
+id = "danieladk.neon"
+name = "NEON"
+version = "0.1.0"
+description = "NEON for Nette and PHPStan configuration: highlighting, structure view, folding, problems while typing, completion of keys, %parameters% and @services, Go to Definition and hovers across included files."
+authors = ["DanielADK"]
+license = "Apache-2.0"
+change-notes = "0.1.0 — first release: *.neon and *.neon.dist files; highlighting, structure view and folding; nette/neon's syntax errors, bad indentation, tabs mixed with spaces, unclosed brackets and strings, duplicate keys while typing, and warnings where nette/neon 3 (PHPStan, Nette 3) reads a file otherwise; completion of Nette and PHPStan keys, parameters, services and included files; Go to Definition and hovers for includes, %parameters%, @services and PHP classes."
+categories = ["languages", "frameworks"]
+icon = "icon.svg"
+icon-dark = "icon_dark.svg"
+engines.openidea = "^1.3"
+# Highlighting, structure and folding come from this component: it is loaded
+# with the first NEON file.
+wasm = "dist/plugin.wasm"
+activation = ["on-language:neon"]
+
+[capabilities]
+# Included files are read to find %parameters% and @services defined there,
+# and the project's symbol index to find PHP classes. See README.md.
+required = ["project.read"]
+
+[[contributes.languages]]
+path = "languages/neon.toml"
+
+[[contributes.providers]]
+kinds = ["completion", "definition", "hover", "diagnostics"]
+languages = ["neon"]
+
+[[contributes.fileIcons]]
+id = "neon"
+patterns = ["*.neon", "*.neon.dist"]
+icon = "icons/neon.svg"
+iconDark = "icons/neon_dark.svg"

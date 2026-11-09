@@ -1,0 +1,87 @@
+includes:
+	- phpstan-baseline.neon
+	- vendor/phpstan/phpstan-strict-rules/rules.neon
+	- phar://phpstan.phar/conf/bleedingEdge.neon
+
+parameters:
+	level: 8
+	phpVersion: 80300
+	paths:
+		- src
+		- tests
+	tmpDir: %currentWorkingDirectory%/var/phpstan
+	bootstrapFiles:
+		- tests/bootstrap.php
+	excludePaths:
+		analyse:
+			- src/thirdparty
+		analyseAndScan:
+			- tests/*/data/*
+	treatPhpDocTypesAsCertain: false
+	checkUninitializedProperties: true
+	reportUnmatchedIgnoredErrors: true
+	parallel:
+		maximumNumberOfProcesses: int(%env.PHPSTAN_CPU%)
+		processTimeout: 300.0
+	dynamicConstantNames:
+		DATABASE_ENGINE: string|null
+		Foo::BAR_CONSTANT: int|string|null
+	typeAliases:
+		UserId: 'int<1, max>'
+	universalObjectCratesClasses:
+		- Dibi\Row
+	ignoreErrors:
+		- '#^Dynamic call to static method PHPUnit\\Framework\\\S+\(\)\.$#'
+		-
+			identifier: missingType.iterableValue
+			paths:
+				- src/Legacy/*
+				- tests/*
+			reportUnmatched: false # used only on some PHP versions
+		-
+			message: '''
+				#^Access to constant on deprecated class Foo\:
+				in 1\.0\.0\.$#
+			'''
+			path: src/Deprecated.php
+		-
+			message: "#^Parameter \\#1 \\$value of function strlen expects string, int given\\.$#"
+			count: 2
+			path: src/Strings.php
+		-
+			rawMessage: 'Method App\Foo::bar() has no return type, it''s missing.'
+			identifier: missingType.return
+
+	myExtension:
+		enabled: true
+
+parametersSchema:
+	myExtension: structure([
+		enabled: bool()
+		?mode: schema(string(), nullable())
+	])
+	excludePaths: anyOf(
+		structure([
+			analyse: listOf(string()),
+		]),
+		structure([
+			analyseAndScan: listOf(string()),
+		])
+	)
+
+rules:
+	- App\PHPStan\NoGlobalStateRule
+
+services:
+	-
+		class: App\PHPStan\ServiceDynamicReturnTypeExtension
+		tags:
+			- phpstan.broker.dynamicMethodReturnTypeExtension
+	strictRule:
+		class: App\PHPStan\StrictRule
+		arguments:
+			treatPhpDocTypesAsCertain: %treatPhpDocTypesAsCertain%
+
+conditionalTags:
+	App\PHPStan\NoGlobalStateRule:
+		phpstan.rules.rule: %myExtension.enabled%

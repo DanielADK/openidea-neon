@@ -1,0 +1,10 @@
+# NEON: Nette and PHPStan configuration (config/common.neon, phpstan.neon,
+# phpstan.neon.dist, phpstan.dist.neon, phpstan-baseline.neon). The longest
+# extension wins, so `neon.dist` catches `*.neon.dist` files.
+id = "neon"
+name = "NEON"
+extensions = ["neon", "neon.dist"]
+line-comment = "#"
+# Nette indents with tabs.
+indent = { tab-size = 4, insert-spaces = false }
+scratch-template = "parameters:\n\t$END$\n"

@@ -1,0 +1,58 @@
+services:
+	- App\Core\RouterFactory::createRouter
+	database: PDO('sqlite::memory:')
+
+	articles:
+		create: App\Model\Articles(%appDir%, @database)
+		type: App\Model\ArticleRepository
+		inject: true
+		autowired: self
+		lazy: false
+		tags:
+			- cached
+			logger: monolog.logger.event
+		setup:
+			- setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION)
+			- $value = 123
+			- '$onClick[]' = [@bar, clickHandler]
+			- My\Helpers::initializeFoo(@self)
+			- @anotherService::setFoo(@self)
+
+	reader:
+		factory: DatabaseFactory::create(
+			username: root
+			password: secret
+			dsn: 'mysql:host=127.0.0.1;dbname=test'
+		)
+		arguments: [_, %appDir%]
+
+	- Foo(
+		id: int(::getenv('ProjectId'))
+		productionMode: not(%debugMode%)
+		bars: typed(Bar)
+		loggers: tagged(logger)
+	)
+	host: @http.request::getUrl()::getHost()
+	apiUrl: @settings::apiUrl
+	callback: @user::logout(...)
+	constant: ::constant(\PHP_VERSION)
+
+	application.application:
+		create: MyApplication
+		alteration: true
+		reset:
+			arguments: true
+			setup: true
+		setup:
+			- '$onStartup[]' = [@resource, init]
+
+	@Nette\Application\Application:
+		create: MyApplication
+
+	articleFactory:
+		implement: App\Model\ArticleFactory
+		arguments: [%appDir%]
+
+	cache.journal: false
+	generated:
+		create: Nette\Utils\DateTime::from('2024-01-01')::modify('+1 day')

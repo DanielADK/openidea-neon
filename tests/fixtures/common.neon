@@ -1,0 +1,80 @@
+# Application configuration in the style of a Nette web project.
+
+includes:
+	- services.neon
+	- local.neon
+
+parameters:
+	appName: 'Žluťoučký kůň 🐴'
+	mailer:
+		host: smtp.example.com
+		port: 587
+		secure: tls
+	languages: [cs, en, de]
+	cacheDir: %tempDir%/cache
+	percent: '100%% done'
+
+
+application:
+	errorPresenter:
+		4xx: Error:Error4xx
+		5xx: Error:Error5xx
+	mapping: App\Presentation\*\**Presenter
+	catchExceptions: %productionMode%
+
+
+database:
+	dsn: 'mysql:host=127.0.0.1;dbname=test'
+	user: root
+	password:
+	options:
+		lazy: yes
+
+
+latte:
+	strictParsing: yes
+	strictTypes: true
+	extensions:
+		- App\Presentation\Accessory\LatteExtension
+
+
+session:
+	expiration: 14 days
+	autoStart: smart
+
+
+di:
+	export:
+		parameters: no
+		tags: no
+
+
+search:
+	-	in: %appDir%
+		classes:
+			- *Facade
+			- *Factory
+		exclude:
+			classes: [*Test]
+	model:
+		in: %appDir%/Model
+
+
+assets:
+	mapping:
+		default:
+			path: assets
+			# type: vite
+
+
+tracy:
+	maxDepth: 6
+	keysToHide: [password, pass, secret]
+	editor: 'phpstorm://open?file=%file&line=%line'
+
+
+http:
+	headers:
+		X-Powered-By: Nette Framework 3
+	csp:
+		script-src: [nonce, strict-dynamic, self]

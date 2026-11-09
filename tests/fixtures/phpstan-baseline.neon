@@ -1,0 +1,25 @@
+parameters:
+	ignoreErrors:
+		-
+			message: '#^Cannot cast mixed to string\.$#'
+			identifier: cast.string
+			count: 12
+			path: app/constants.php
+
+		-
+			message: '#^Binary operation "\." between ''\://'' and mixed results in an error\.$#'
+			identifier: binaryOp.invalid
+			count: 1
+			path: examples/openid.php
+
+		-
+			rawMessage: PHPDoc tag @var with type int|string is not subtype of type string.
+			identifier: varTag.type
+			count: 1
+			path: src/Analyser/ArgumentsNormalizer.php
+
+		-
+			message: "#^Call to an undefined method App\\\\Model\\\\Foo\\:\\:bar\\(\\)\\.$#"
+			identifier: method.notFound
+			count: 3
+			path: src/Model/Foo.php

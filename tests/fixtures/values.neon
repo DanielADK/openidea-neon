@@ -1,0 +1,54 @@
+# Every kind of scalar and structure NEON has.
+strings:
+	plain: An unquoted string with spaces
+	single: 'It''s single-quoted: no escapes \n here'
+	double: "Tab\tnewline\nunicode \u00A9 \uD83D\uDE00 nbsp\_ slash\/"
+	multiline: '''
+		first line
+			second line
+		third line
+		'''
+	escaped: """
+		Copyright \u00A9
+		a backslash at the end stays \
+	"""
+	url: 'http://localhost/path?a=b'
+	bareUrl: http://localhost/path
+	hashInside: the"string#literal
+	colonInside: a:b
+numbers: [12, 12.3, +1.2e-34, .5, 1., 0b11010, 0o666, 0x7A, -0, 0777]
+literals: [true, TRUE, True, false, yes, Yes, NO, null, NULL, on, off]
+dates:
+	- 2016-06-03
+	- 2016-06-03 19:00:00
+	- 2016-06-03 19:00:00.1234
+	- 2016-06-03 19:00:00 +0200
+	- 2016-06-03T19:00:00Z
+	- 2024-02-30 # not a date: a string
+inline: {street=742 Evergreen Terrace, city: Springfield, 5: Cat, Dog}
+keyOnNextLine: {
+	"a"
+	: 1
+	b:
+		2
+}
+entities:
+	- Column(type: int, nulls: yes)
+	- Column(type: int) Field(id: 1)
+	- first(a, b)second
+	- [](1)
+mixed:
+	- Cat
+	street: 742 Evergreen Terrace
+	- Goldfish
+crlf: "kept"
+empty:
+nested:
+	- - a
+	  - b
+	- -
+		c: 1
+key!: [replaced, not merged]
+'quoted key': 1
+"key with \"quotes\"": 2
+emoji😀: value
