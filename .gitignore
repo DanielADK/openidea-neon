@@ -2,3 +2,4 @@
 /dist
 *.key
 .DS_Store
+*.oiplugin
