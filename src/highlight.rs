@@ -1,9 +1,10 @@
 //! Highlighting: each token by its role in the tree, literals split into
 //! the parts of Nette's expression language (`@service::method`,
-//! `Class::CONSTANT`, `%parameter%`), escapes inside strings.
+//! `Class::CONSTANT`, `%parameter%`), escapes inside strings, and PHPStan's
+//! error identifiers.
 
 use crate::neon::scalar::{self, LiteralKind};
-use crate::neon::{Parsed, Role, TokenKind};
+use crate::neon::{Array, Parsed, Role, TokenKind, Value};
 use openidea_plugin::syntax::{Highlight, Token};
 
 /// The host keeps at most this many tokens per document.
@@ -15,6 +16,7 @@ pub fn highlights(p: &Parsed) -> Vec<Token> {
     let mut out = Out { tokens: Vec::with_capacity(p.lexed.tokens.len() + p.lexed.comments.len()) };
     let punctuation = p.text.len() <= PUNCTUATION_LIMIT;
     let mut comments = p.lexed.comments.iter().peekable();
+    let mut identifiers = phpstan_identifiers(p).into_iter().peekable();
     for (i, t) in p.lexed.tokens.iter().enumerate() {
         while let Some(c) = comments.next_if(|c| c.start < t.span.start) {
             out.push(c.start as usize, c.end as usize, Highlight::Comment);
@@ -25,6 +27,10 @@ pub fn highlights(p: &Parsed) -> Vec<Token> {
         let (start, end) = (t.span.start as usize, t.span.end as usize);
         let text = t.span.text(&p.text);
         let role = p.doc.role(i);
+        if identifiers.next_if_eq(&(i as u32)).is_some() {
+            out.push(start, end, Highlight::Attribute);
+            continue;
+        }
         match t.kind {
             TokenKind::Literal => literal(&mut out, text, start, role),
             TokenKind::String if role == Role::Key => out.push(start, end, Highlight::Property),
@@ -40,6 +46,35 @@ pub fn highlights(p: &Parsed) -> Vec<Token> {
     }
     out.tokens.truncate(MAX_TOKENS);
     out.tokens
+}
+
+/// The values of `parameters › ignoreErrors › - › identifier`, such as `argument.type`, in a
+/// PHPStan config or baseline, in token order. Found from the tree once, as a baseline holds one
+/// per entry.
+fn phpstan_identifiers(p: &Parsed) -> Vec<u32> {
+    fn block<'a>(p: &Parsed, a: &'a Array, key: &str) -> Option<&'a Array> {
+        a.items.iter().find(|i| i.key.is_some_and(|k| p.key_name(k) == key)).and_then(|i| match &i.value {
+            Some(Value::Array(a)) => Some(a),
+            _ => None,
+        })
+    }
+    let Some(Value::Array(root)) = p.doc.root.as_ref() else { return Vec::new() };
+    let Some(errors) = block(p, root, "parameters").and_then(|a| block(p, a, "ignoreErrors")) else {
+        return Vec::new();
+    };
+    let mut out: Vec<u32> = errors
+        .items
+        .iter()
+        .filter_map(|entry| match &entry.value {
+            Some(Value::Array(fields)) if entry.key.is_none() => fields.items.iter().find_map(|f| match &f.value {
+                Some(Value::Scalar(v)) if f.key.is_some_and(|k| p.key_name(k) == "identifier") => Some(*v),
+                _ => None,
+            }),
+            _ => None,
+        })
+        .collect();
+    out.sort_unstable();
+    out
 }
 
 struct Out {
@@ -257,6 +292,20 @@ mod tests {
         assert!(k.contains(&("/c\"".into(), "string")));
         assert!(has("a: 'it''s 100%%'", "''", "escape"));
         assert!(has("a: 'it''s 100%%'", "%%", "escape"));
+    }
+
+    #[test]
+    fn phpstan_error_identifiers() {
+        let block = "parameters:\n\tignoreErrors:\n\t\t-\n\t\t\tmessage: '#^Foo#'\n\t\t\tidentifier: argument.type\n";
+        assert!(has(block, "argument.type", "attribute"));
+        assert!(has(block, "'#^Foo#'", "string"));
+        let inline = "parameters:\n\tignoreErrors:\n\t\t- {identifier: 'return.type', path: src/a.php}\n";
+        assert!(has(inline, "'return.type'", "attribute"));
+        assert!(has(inline, "src/a.php", "string"));
+        // The same key elsewhere is an ordinary value.
+        assert!(has("identifier: argument.type", "argument.type", "string"));
+        assert!(has("services:\n\t- identifier: argument.type", "argument.type", "string"));
+        assert!(has("parameters:\n\tignoreErrors:\n\t\t- identifier\n", "identifier", "string"));
     }
 
     #[test]
